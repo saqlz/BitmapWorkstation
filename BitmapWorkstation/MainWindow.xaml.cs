@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using BitmapWorkstation.Helper;
 
 namespace BitmapWorkstation
 {
@@ -25,9 +26,12 @@ namespace BitmapWorkstation
             InitializeComponent();
         }
 
-        private void ClickMe_Click(object sender, RoutedEventArgs e)
+        private void UsingBitmapData_Click(object sender, RoutedEventArgs e)
         {
-
+            var bitmap = ByteArrayToBitmap.GeneratedBitmap("../../TestFile/TestFile.txt", 640, 480);
+            var bitmapImage = ByteArrayToBitmap.ConvertBitmapToImage(bitmap);
+            var image = new Image() {Source = bitmapImage };
+            this.BitmapShowCanvas.Children.Add(image);
         }
     }
 }

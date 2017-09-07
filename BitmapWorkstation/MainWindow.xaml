@@ -5,19 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BitmapWorkstation"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="680">
+        Title="MainWindow" Height="550" Width="680">
     <Grid>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="480"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Width="640">
-                <Canvas x:Name="BitmapShowCanvas"></Canvas>
-            </Grid>
-            <Grid Grid.Row="1" HorizontalAlignment="Center" Width="200" Height="60">
-                <Button x:Name="ClickMe" Content="Click Me" FontSize="35" Click="ClickMe_Click"></Button>
-            </Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="480"/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Canvas x:Name="BitmapShowCanvas" Width="640" Height="480"></Canvas>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Button x:Name="UsingBitmapData" Content="Using BitmapData" HorizontalAlignment="Left" 
+                        Height="30" FontSize="15" Click="UsingBitmapData_Click"></Button>
         </Grid>
     </Grid>
 </Window>
