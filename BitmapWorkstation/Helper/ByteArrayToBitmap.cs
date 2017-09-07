@@ -20,7 +20,7 @@ namespace BitmapWorkstation.Helper
             PixelFormat format = PixelFormat.Format24bppRgb)
         {
             var bitmap = new Bitmap(imgWidth, imgHeight, format);
-            var imageArray = new byte[0];
+            byte[] imageArray;
             using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 var binaryReader = new BinaryReader(fileStream);
@@ -53,12 +53,12 @@ namespace BitmapWorkstation.Helper
         /// <summary>
         /// 将Bitmap转换成BitmapImage
         /// </summary>
-        public static BitmapImage ConvertBitmapToImage(Bitmap bitmap)
+        public static BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
         {
             var bitmapImage = new BitmapImage();
             using (var ms = new MemoryStream())
             {
-                bitmap.Save(ms, ImageFormat.Bmp);
+                bitmap.Save(ms, ImageFormat.Png);
                 bitmapImage.BeginInit();
                 bitmapImage.StreamSource = ms;
                 bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
@@ -68,6 +68,33 @@ namespace BitmapWorkstation.Helper
             return bitmapImage;
         }
 
+        /// <summary>
+        /// 将Bitmap转换成byte数组
+        /// </summary>
+        public static byte[] ConvertBitmapToByteArray(Bitmap bitmap)
+        {
+            using (var ms = new MemoryStream())
+            {
+                bitmap.Save(ms, bitmap.RawFormat);
+                return ms.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// 将Bitmap转换成byte数组后继续转换成BitmapImage
+        /// </summary>
+        public static BitmapImage ConvertByteArrayToBitmapImage(byte[] imageArray)
+        {
+            using (var ms = new MemoryStream(imageArray))
+            {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad; // here
+                image.StreamSource = ms;
+                image.EndInit();
+                return image;
+            }
+        }
 
         public static BitmapImage GetBitmapFromMemory(string filePath, int imgWidth, int imgHeight)
         {
@@ -122,35 +149,38 @@ namespace BitmapWorkstation.Helper
                 ms.Write(imageArray, 0, imageLength);
                 bitmap = new Bitmap(ms); //用内存流构造出一幅bitmap的图片
             }
-            //bitmap.Save("D:\\test.bmp");
+            bitmap.Save("D:\\test.bmp");
             return ConvertBitmapToImage(bitmap);
         }
 
-//         public static ImageFormat GetImageFormat(Bitmap bitmap)
-//         {
-//             var ms = new MemoryStream();
-//             foreach (var format in new ImageFormat[]{
-//                                    ImageFormat.Bmp,
-//                                    ImageFormat.Emf,
-//                                    ImageFormat.Exif,
-//                                    ImageFormat.Gif,
-//                                    ImageFormat.Icon,
-//                                    ImageFormat.Jpeg,
-//                                    ImageFormat.MemoryBmp,
-//                                    ImageFormat.Png,
-//                                    ImageFormat.Tiff,
-//                                    ImageFormat.Wmf})
-//             {
-// 
-//                 try
-//                 {
-//                     bitmap.Save(ms, format);
-//                     return format;
-//                 }
-//                 catch(Exception) { }
-//             }
-//             return ImageFormat.Bmp;
-//         }
+
+
+
+        public static ImageFormat GetImageFormat(Bitmap bitmap)
+        {
+            var ms = new MemoryStream();
+            foreach (var format in new ImageFormat[]{
+                                    ImageFormat.Bmp,
+                                    ImageFormat.Emf,
+                                    ImageFormat.Exif,
+                                    ImageFormat.Gif,
+                                    ImageFormat.Icon,
+                                    ImageFormat.Jpeg,
+                                    ImageFormat.MemoryBmp,
+                                    ImageFormat.Png,
+                                    ImageFormat.Tiff,
+                                    ImageFormat.Wmf})
+            {
+
+                try
+                {
+                    bitmap.Save(ms, format);
+                    return format;
+                }
+                catch (Exception) { }
+            }
+            return ImageFormat.Bmp;
+        }
 
     }
 }

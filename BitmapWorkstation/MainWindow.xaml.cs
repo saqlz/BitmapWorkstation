@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using BitmapWorkstation.Helper;
+using Image = System.Windows.Controls.Image;
 
 namespace BitmapWorkstation
 {
@@ -30,7 +31,10 @@ namespace BitmapWorkstation
         {
             //var bitmap = ByteArrayToBitmap.GeneratedBitmap("../../TestFile/TestFile.txt", 640, 480);
             //var bitmapImage = ByteArrayToBitmap.ConvertBitmapToImage(bitmap);
-            var bitmapImage = ByteArrayToBitmap.GetBitmapFromMemory("../../TestFile/TestFile.txt", 640, 480);
+            //var bitmapImage = ByteArrayToBitmap.GetBitmapFromMemory("../../TestFile/TestFile.txt", 640, 480);
+
+            var bitmap = new Bitmap("../../TestFile/Image.bmp");
+            var bitmapImage = ByteArrayToBitmap.ConvertByteArrayToBitmapImage(ByteArrayToBitmap.ConvertBitmapToByteArray(bitmap));
             var image = new Image() {Source = bitmapImage };
             this.BitmapShowCanvas.Children.Add(image);
         }
