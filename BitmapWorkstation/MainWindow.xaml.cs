@@ -24,5 +24,10 @@ namespace BitmapWorkstation
         {
             InitializeComponent();
         }
+
+        private void ClickMe_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

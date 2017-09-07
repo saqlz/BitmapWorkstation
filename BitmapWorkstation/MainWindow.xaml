@@ -12,11 +12,11 @@
                 <RowDefinition Height="480"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0">
-                <Canvas ></Canvas>
+            <Grid Grid.Row="0" Width="640">
+                <Canvas x:Name="BitmapShowCanvas"></Canvas>
             </Grid>
             <Grid Grid.Row="1" HorizontalAlignment="Center" Width="200" Height="60">
-                <Button x:Name="ClickMe" Content="Click Me" FontSize="35"></Button>
+                <Button x:Name="ClickMe" Content="Click Me" FontSize="35" Click="ClickMe_Click"></Button>
             </Grid>
         </Grid>
     </Grid>
