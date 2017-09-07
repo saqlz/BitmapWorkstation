@@ -68,28 +68,86 @@ namespace BitmapWorkstation.Helper
             return bitmapImage;
         }
 
+
+        public static BitmapImage GetBitmapFromMemory(string filePath, int imgWidth, int imgHeight)
+        {
+            Bitmap bitmap = null;
+            var imageArray = new byte[0];
+            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                var binaryReader = new BinaryReader(fileStream);
+                binaryReader.BaseStream.Seek(0, SeekOrigin.Begin); //Move to first
+                imageArray = binaryReader.ReadBytes(Convert.ToInt32(binaryReader.BaseStream.Length));
+            }
+
+            var imageLength = imageArray.Length;
+            using (var ms = new MemoryStream(imageLength + 14 + 40)) //为头腾出54个长度的空间
+            {
+                var buffer = new byte[13];
+                buffer[0] = 0x42; //bitmap 固定常数
+                buffer[1] = 0x4D; //bitmap 固定常数
+                ms.Write(buffer, 0, 2); //先写入头的前两个字节
+
+                buffer = BitConverter.GetBytes(imageLength);
+                ms.Write(buffer, 0, 4); //把这个长度写入头中去
+
+                buffer = BitConverter.GetBytes(0);
+                ms.Write(buffer, 0, 4); //在写入4个字节长度的数据到头中去
+
+                buffer = BitConverter.GetBytes(54);
+                ms.Write(buffer, 0, 4); //固定常数也就是十六进制的0x36
+
+                buffer = BitConverter.GetBytes(40); //写入信息头的长度biSize
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(imgWidth); //写入信息头的图像宽度biWidth
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(imgHeight); //写入信息头的图像高度biHeight
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes((short) 1); //写入信息头的biPlanes
+                ms.Write(buffer, 0, 2);
+                buffer = BitConverter.GetBytes((short) 24); //写入信息头的biBitCount
+                ms.Write(buffer, 0, 2);
+                buffer = BitConverter.GetBytes(0); //写入信息头的biCompression
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(0); //写入信息头的biSizeImage
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(0); //写入信息头的biXPelsPerMeter
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(0); //写入信息头的biYPelsPerMeter
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(0); //写入信息头的biClrUsed
+                ms.Write(buffer, 0, 4);
+                buffer = BitConverter.GetBytes(0); //写入信息头的biClrImportant
+                ms.Write(buffer, 0, 4);
+                ms.Write(imageArray, 0, imageLength);
+                bitmap = new Bitmap(ms); //用内存流构造出一幅bitmap的图片
+            }
+            //bitmap.Save("D:\\test.bmp");
+            return ConvertBitmapToImage(bitmap);
+        }
+
 //         public static ImageFormat GetImageFormat(Bitmap bitmap)
 //         {
 //             var ms = new MemoryStream();
 //             foreach (var format in new ImageFormat[]{
-//                   ImageFormat.Bmp,
-//                   ImageFormat.Emf,
-//                   ImageFormat.Exif,
-//                   ImageFormat.Gif,
-//                   ImageFormat.Icon,
-//                   ImageFormat.Jpeg,
-//                   ImageFormat.MemoryBmp,
-//                   ImageFormat.Png,
-//                   ImageFormat.Tiff,
-//                   ImageFormat.Wmf})
+//                                    ImageFormat.Bmp,
+//                                    ImageFormat.Emf,
+//                                    ImageFormat.Exif,
+//                                    ImageFormat.Gif,
+//                                    ImageFormat.Icon,
+//                                    ImageFormat.Jpeg,
+//                                    ImageFormat.MemoryBmp,
+//                                    ImageFormat.Png,
+//                                    ImageFormat.Tiff,
+//                                    ImageFormat.Wmf})
 //             {
-//                
+// 
 //                 try
 //                 {
 //                     bitmap.Save(ms, format);
 //                     return format;
 //                 }
-//                 finally { }
+//                 catch(Exception) { }
 //             }
 //             return ImageFormat.Bmp;
 //         }
