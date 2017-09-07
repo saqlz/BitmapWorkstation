@@ -116,9 +116,8 @@ namespace BitmapWorkstation.Helper
             return bitmapImage;
         }
 
-        public static BitmapImage GetBitmapFromMemory(string filePath, int imgWidth, int imgHeight)
+        public static Bitmap GetBitmapFromMemory(string filePath, int imgWidth, int imgHeight)
         {
-            Bitmap bitmap = null;
             byte[] imageArray;
             using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
@@ -127,50 +126,74 @@ namespace BitmapWorkstation.Helper
                 imageArray = binaryReader.ReadBytes(Convert.ToInt32(binaryReader.BaseStream.Length));
             }
 
-            var imageLength = imageArray.Length;
-            using (var ms = new MemoryStream(imageLength + 14 + 40)) //为头腾出54个长度的空间
+            int BmpBufferSize = imageArray.Length;
+            // BmpBufferSize : a pure length of raw bitmap data without the header.
+            // the 54 value here is the length of bitmap header.
+            byte[] BitmapBytes = new byte[BmpBufferSize + 54];
+
+            #region Bitmap Header
+            // 0~2 "BM"
+            BitmapBytes[0] = 0x42;
+            BitmapBytes[1] = 0x4d;
+
+            // 2~6 Size of the BMP file - Bit cound + Header 54
+            Array.Copy(BitConverter.GetBytes(BmpBufferSize + 54), 0, BitmapBytes, 2, 4);
+
+            // 6~8 Application Specific : normally, set zero
+            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 6, 2);
+
+            // 8~10 Application Specific : normally, set zero
+            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 8, 2);
+
+            // 10~14 Offset where the pixel array can be found - 24bit bitmap data always starts at 54 offset.
+            Array.Copy(BitConverter.GetBytes(54), 0, BitmapBytes, 10, 4);
+            #endregion
+
+            #region DIB Header
+            // 14~18 Number of bytes in the DIB header. 40 bytes constant.
+            Array.Copy(BitConverter.GetBytes(40), 0, BitmapBytes, 14, 4);
+
+            // 18~22 Width of the bitmap.
+            Array.Copy(BitConverter.GetBytes(imgWidth), 0, BitmapBytes, 18, 4);
+
+            // 22~26 Height of the bitmap.
+            Array.Copy(BitConverter.GetBytes(imgHeight), 0, BitmapBytes, 22, 4);
+
+            // 26~28 Number of color planes being used
+            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 26, 2);
+
+            // 28~30 Number of bits. If you don't know the pixel format, trying to calculate it with the quality of the video/image source.
+            //if (image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
             {
-                var buffer = new byte[13];
-                buffer[0] = 0x42; //bitmap 固定常数
-                buffer[1] = 0x4D; //bitmap 固定常数
-                ms.Write(buffer, 0, 2); //先写入头的前两个字节
-
-                buffer = BitConverter.GetBytes(imageLength);
-                ms.Write(buffer, 0, 4); //把这个长度写入头中去
-
-                buffer = BitConverter.GetBytes(0);
-                ms.Write(buffer, 0, 4); //在写入4个字节长度的数据到头中去
-
-                buffer = BitConverter.GetBytes(54);
-                ms.Write(buffer, 0, 4); //固定常数也就是十六进制的0x36
-
-                buffer = BitConverter.GetBytes(40); //写入信息头的长度biSize
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(imgWidth); //写入信息头的图像宽度biWidth
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(imgHeight); //写入信息头的图像高度biHeight
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes((short) 1); //写入信息头的biPlanes
-                ms.Write(buffer, 0, 2);
-                buffer = BitConverter.GetBytes((short) 24); //写入信息头的biBitCount
-                ms.Write(buffer, 0, 2);
-                buffer = BitConverter.GetBytes(0); //写入信息头的biCompression
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(0); //写入信息头的biSizeImage
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(0); //写入信息头的biXPelsPerMeter
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(0); //写入信息头的biYPelsPerMeter
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(0); //写入信息头的biClrUsed
-                ms.Write(buffer, 0, 4);
-                buffer = BitConverter.GetBytes(0); //写入信息头的biClrImportant
-                ms.Write(buffer, 0, 4);
-                ms.Write(imageArray, 0, imageLength);
-                bitmap = new Bitmap(ms); //用内存流构造出一幅bitmap的图片
+                Array.Copy(BitConverter.GetBytes(24), 0, BitmapBytes, 28, 2);
             }
-            bitmap.Save("D:\\test.bmp");
-            return ConvertBitmapToBitmapImage(bitmap);
+
+            // 30~34 BI_RGB no pixel array compression used : most of the time, just set zero if it is raw data.
+            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 30, 4);
+
+            // 34~38 Size of the raw bitmap data ( including padding )
+            Array.Copy(BitConverter.GetBytes(BmpBufferSize), 0, BitmapBytes, 34, 4);
+
+            // 38~46 Print resolution of the image, 72 DPI x 39.3701 inches per meter yields
+           // if (image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
+            {
+                Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 38, 4);
+                Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 42, 4);
+            }
+
+            // 46~50 Number of colors in the palette
+            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 46, 4);
+
+            // 50~54 means all colors are important
+            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 50, 4);
+
+            // 54~end : Pixel Data : Finally, time to combine your raw data, BmpBuffer in this code, with a bitmap header you've just created.
+            Array.Copy(imageArray as Array, 0, BitmapBytes, 54, BmpBufferSize);
+            #endregion
+            using (var ms = new MemoryStream(BitmapBytes))
+            {
+                return new Bitmap((Image)new Bitmap(ms));
+            }
         }
         
         ///// <summary>

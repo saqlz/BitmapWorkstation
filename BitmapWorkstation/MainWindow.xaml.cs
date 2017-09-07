@@ -29,7 +29,7 @@ namespace BitmapWorkstation
 
         private void UsingBitmapData_Click(object sender, RoutedEventArgs e)
         {
-            var bitmap = ByteArrayToBitmap.GeneratedBitmap("../../TestFile/TestFile.txt", 640, 480);
+            var bitmap = ByteArrayToBitmap.GetBitmapFromMemory("../../TestFile/TestFile.txt", 640, 480);
 //            var bitmap = new Bitmap("../../TestFile/Image.bmp");
             var bitmapImage = ByteArrayToBitmap.ConvertByteArrayToBitmapImage(ByteArrayToBitmap.ConvertBitmapToByteArray(bitmap));
             var image = new Image() {Source = bitmapImage };
