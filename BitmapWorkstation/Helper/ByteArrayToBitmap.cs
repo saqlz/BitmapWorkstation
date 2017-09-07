@@ -16,7 +16,7 @@ namespace BitmapWorkstation.Helper
         /// 使用BitmapData Class来将文件中读取为byte[]后生成Bitmap
         /// 难点是byte[]不能直接生成Bitmap，因为Bitmap存在信息头
         /// </summary>
-        public static Bitmap GeneratedBitmap(string filePath, int imgWidth, int imgHeight, 
+        public static Bitmap GeneratedBitmapByBitmapImageData(string filePath, int imgWidth, int imgHeight, 
             PixelFormat format = PixelFormat.Format24bppRgb)
         {
             var bitmap = new Bitmap(imgWidth, imgHeight, format);
@@ -48,6 +48,90 @@ namespace BitmapWorkstation.Helper
             }
             bitmap.UnlockBits(bitmapImageData);
             return bitmap;
+        }
+
+        public static Bitmap GetBitmapByAppendHeader(string filePath, int imgWidth, int imgHeight)
+        {
+            byte[] imageArray;
+            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                var binaryReader = new BinaryReader(fileStream);
+                binaryReader.BaseStream.Seek(0, SeekOrigin.Begin); //Move to first
+                imageArray = binaryReader.ReadBytes(Convert.ToInt32(binaryReader.BaseStream.Length));
+            }
+
+            //https://stackoverflow.com/questions/11452246/add-a-bitmap-header-to-a-byte-array-then-create-a-bitmap-file
+            // bmpBufferSize : a pure length of raw bitmap data without the header.
+            int bmpBufferSize = imageArray.Length;
+            
+            // the 54 value here is the length of bitmap header.
+            byte[] bitmapBytes = new byte[bmpBufferSize + 54];
+
+            #region Bitmap Header 位图文件头（bitmap-file header）
+
+            // 0~2 "BM" WIndows系统下默认值
+            bitmapBytes[0] = 0x42;
+            bitmapBytes[1] = 0x4d;
+
+            // 2~6 Size of the BMP file - Bit cound + Header 54 整个文件的大小
+            Array.Copy(BitConverter.GetBytes(bmpBufferSize + 54), 0, bitmapBytes, 2, 4);
+
+            // 6~8 Application Specific : normally, set zero 一般为0
+            Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 6, 2);
+
+            // 8~10 Application Specific : normally, set zero  一般为0
+            Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 8, 2);
+
+            // 10~14 Offset where the pixel array can be found - 24bit bitmap data always starts at 54 offset.
+            Array.Copy(BitConverter.GetBytes(54), 0, bitmapBytes, 10, 4);
+            #endregion
+
+            #region DIB Header 位图信息头（bitmap-information header）
+            // 14~18 Number of bytes in the DIB header. 40 bytes constant.
+            Array.Copy(BitConverter.GetBytes(40), 0, bitmapBytes, 14, 4);
+
+            // 18~22 Width of the bitmap.
+            Array.Copy(BitConverter.GetBytes(imgWidth), 0, bitmapBytes, 18, 4);
+
+            // 22~26 Height of the bitmap.
+            Array.Copy(BitConverter.GetBytes(imgHeight), 0, bitmapBytes, 22, 4);
+
+            // 26~28 Number of color planes being used
+            Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 26, 2);
+
+            // 28~30 Number of bits. If you don't know the pixel format, trying to calculate it with the quality of the video/image source.
+            //if (image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
+            {
+                Array.Copy(BitConverter.GetBytes(24), 0, bitmapBytes, 28, 2);
+            }
+
+            // 30~34 BI_RGB no pixel array compression used : most of the time, just set zero if it is raw data.
+            Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 30, 4);
+
+            // 34~38 Size of the raw bitmap data ( including padding )
+            Array.Copy(BitConverter.GetBytes(bmpBufferSize), 0, bitmapBytes, 34, 4);
+
+            // 38~46 Print resolution of the image, 72 DPI x 39.3701 inches per meter yields
+            // if (image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
+            {
+                Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 38, 4);
+                Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 42, 4);
+            }
+
+            // 46~50 Number of colors in the palette
+            Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 46, 4);
+
+            // 50~54 means all colors are important
+            Array.Copy(BitConverter.GetBytes(0), 0, bitmapBytes, 50, 4);
+
+            // 54~end : Pixel Data : Finally, time to combine your raw data, BmpBuffer in this code, with a bitmap header you've just created.
+            Array.Copy(imageArray as Array, 0, bitmapBytes, 54, bmpBufferSize);
+            #endregion
+            
+            using (var ms = new MemoryStream(bitmapBytes))
+            {
+                return new Bitmap((Image)new Bitmap(ms));
+            }
         }
 
         /// <summary>
@@ -114,86 +198,6 @@ namespace BitmapWorkstation.Helper
                 bitmapImage.Freeze();
             }
             return bitmapImage;
-        }
-
-        public static Bitmap GetBitmapFromMemory(string filePath, int imgWidth, int imgHeight)
-        {
-            byte[] imageArray;
-            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                var binaryReader = new BinaryReader(fileStream);
-                binaryReader.BaseStream.Seek(0, SeekOrigin.Begin); //Move to first
-                imageArray = binaryReader.ReadBytes(Convert.ToInt32(binaryReader.BaseStream.Length));
-            }
-
-            int BmpBufferSize = imageArray.Length;
-            // BmpBufferSize : a pure length of raw bitmap data without the header.
-            // the 54 value here is the length of bitmap header.
-            byte[] BitmapBytes = new byte[BmpBufferSize + 54];
-
-            #region Bitmap Header
-            // 0~2 "BM"
-            BitmapBytes[0] = 0x42;
-            BitmapBytes[1] = 0x4d;
-
-            // 2~6 Size of the BMP file - Bit cound + Header 54
-            Array.Copy(BitConverter.GetBytes(BmpBufferSize + 54), 0, BitmapBytes, 2, 4);
-
-            // 6~8 Application Specific : normally, set zero
-            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 6, 2);
-
-            // 8~10 Application Specific : normally, set zero
-            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 8, 2);
-
-            // 10~14 Offset where the pixel array can be found - 24bit bitmap data always starts at 54 offset.
-            Array.Copy(BitConverter.GetBytes(54), 0, BitmapBytes, 10, 4);
-            #endregion
-
-            #region DIB Header
-            // 14~18 Number of bytes in the DIB header. 40 bytes constant.
-            Array.Copy(BitConverter.GetBytes(40), 0, BitmapBytes, 14, 4);
-
-            // 18~22 Width of the bitmap.
-            Array.Copy(BitConverter.GetBytes(imgWidth), 0, BitmapBytes, 18, 4);
-
-            // 22~26 Height of the bitmap.
-            Array.Copy(BitConverter.GetBytes(imgHeight), 0, BitmapBytes, 22, 4);
-
-            // 26~28 Number of color planes being used
-            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 26, 2);
-
-            // 28~30 Number of bits. If you don't know the pixel format, trying to calculate it with the quality of the video/image source.
-            //if (image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
-            {
-                Array.Copy(BitConverter.GetBytes(24), 0, BitmapBytes, 28, 2);
-            }
-
-            // 30~34 BI_RGB no pixel array compression used : most of the time, just set zero if it is raw data.
-            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 30, 4);
-
-            // 34~38 Size of the raw bitmap data ( including padding )
-            Array.Copy(BitConverter.GetBytes(BmpBufferSize), 0, BitmapBytes, 34, 4);
-
-            // 38~46 Print resolution of the image, 72 DPI x 39.3701 inches per meter yields
-           // if (image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
-            {
-                Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 38, 4);
-                Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 42, 4);
-            }
-
-            // 46~50 Number of colors in the palette
-            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 46, 4);
-
-            // 50~54 means all colors are important
-            Array.Copy(BitConverter.GetBytes(0), 0, BitmapBytes, 50, 4);
-
-            // 54~end : Pixel Data : Finally, time to combine your raw data, BmpBuffer in this code, with a bitmap header you've just created.
-            Array.Copy(imageArray as Array, 0, BitmapBytes, 54, BmpBufferSize);
-            #endregion
-            using (var ms = new MemoryStream(BitmapBytes))
-            {
-                return new Bitmap((Image)new Bitmap(ms));
-            }
         }
         
         ///// <summary>
