@@ -16,11 +16,6 @@ namespace BitmapWorkstation.Helper
         /// 使用BitmapData Class来将文件中读取为byte[]后生成Bitmap
         /// 难点是byte[]不能直接生成Bitmap，因为Bitmap存在信息头
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="imgWidth"></param>
-        /// <param name="imgHeight"></param>
-        /// <param name="format"></param>
-        /// <returns></returns>
         public static Bitmap GeneratedBitmap(string filePath, int imgWidth, int imgHeight, 
             PixelFormat format = PixelFormat.Format24bppRgb)
         {
@@ -55,6 +50,9 @@ namespace BitmapWorkstation.Helper
             return bitmap;
         }
 
+        /// <summary>
+        /// 将Bitmap转换成BitmapImage
+        /// </summary>
         public static BitmapImage ConvertBitmapToImage(Bitmap bitmap)
         {
             var bitmapImage = new BitmapImage();
