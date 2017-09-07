@@ -10,7 +10,7 @@ using System.Windows.Media.Imaging;
 
 namespace BitmapWorkstation.Helper
 {
-    public static class BitmapHelper
+    public static class BitmapHelpers
     {
         /// <summary>
         /// 使用BitmapData Class来将文件中读取为byte[]后生成Bitmap
