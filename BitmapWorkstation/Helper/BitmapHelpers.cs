@@ -51,7 +51,7 @@ namespace BitmapWorkstation.Helper
             return bitmap;
         }
 
-        public static Bitmap GetBitmapByAppendHeader(string filePath, int imgWidth, int imgHeight)
+        public static Bitmap GenerateBitmapByAppendHeader(string filePath, int imgWidth, int imgHeight)
         {
             byte[] imageArray;
             using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
